@@ -8,7 +8,6 @@ import { Button, Checkbox, Tooltip, TextField } from '@material-ui/core';
 import styles from "./style.js";
 import classNames from "classnames";
 import { withStyles } from "@material-ui/core/styles";
-import { WorkersCumulativeStatisticsPage } from 'twilio/lib/rest/taskrouter/v1/workspace/worker/workersCumulativeStatistics';
 
 class App extends Component {
   state = {
@@ -21,6 +20,9 @@ class App extends Component {
 
   //ComponentDidMount runs each time the page is reloaded
   componentDidMount(){
+    //Causes the notifyIfFlagRaised function to run every second
+    this.interval = setInterval(() => this.notifyIfFlagRaised(), 1000);
+
     //This fetches all the group chats the user is in
     let baseUrl = "https://api.groupme.com/v3";
     let getGroupsOptions = {
@@ -43,10 +45,14 @@ class App extends Component {
     .catch((error) => console.log(error));
   }
         
+  componentWillUnmount() {
+    clearInterval(this.interval);
+  }
+
   //This handles updating the keywords value in state when editing the "Flagged Keywords" textfield
   handleKeywordChange = (event) => {
     this.setState({
-        keywords: event.target.value,
+        keywords: event.target.value.toLowerCase().replace(/\s/g, '').split(','),
     });
   };
 
@@ -75,6 +81,21 @@ class App extends Component {
     .catch((error) => console.log(error));
   }
   
+  //This checks if any keyword is in the lastText, if so, it prints to console log
+  notifyIfFlagRaised = () => {
+    if(this.state.messages.length != 0){
+      let lastText = this.state.messages[this.state.messages.length -1].text;
+      let flagRaised = false;
+      let wordIndex;
+      for(wordIndex in this.state.keywords){
+        console.log("lastText", lastText)
+        if (lastText.includes(this.state.keywords[wordIndex])){
+          console.log("lastText flag raised! ", this.state.keywords[wordIndex])
+        }
+      }
+    }
+    
+  }
 
   render() {
     
@@ -103,8 +124,9 @@ class App extends Component {
             </div>
             <div className={classes.column}>
               Current Group Chats
-              {this.state.data.map((group)=>(
+              {this.state.data.map((group, i)=>(
                 <Button
+                  key={i}
                   variant="contained"
                   component="label"
                   color="primary"
@@ -131,8 +153,8 @@ class App extends Component {
             </Button>
             <div>
               Group chat messages:
-              {this.state.messages.map((msg)=>(
-                <div>{msg.text}</div>
+              {this.state.messages.map((msg, i)=>(
+                <div key={i}>{msg.text}</div>
               ))}
             </div>
           </div>
