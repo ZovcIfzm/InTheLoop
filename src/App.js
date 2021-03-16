@@ -92,6 +92,8 @@ class App extends Component {
       for(wordIndex in this.state.keywords){
         console.log("lastText", lastText)
         if (lastText.includes(this.state.keywords[wordIndex])){
+
+          //If the flag was raised for the lastText, it'll send you a text message- then say that no more messages can be sent for this particular lastText
           if (this.state.lastAlertedText !== lastText){
             console.log("lastText flag raised! ", this.state.keywords[wordIndex])
             this.setState({ submitting: true, lastAlertedText: lastText });
