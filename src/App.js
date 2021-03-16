@@ -3,7 +3,7 @@ import logo from './logo.gif';
 import './App.css';
 import SMSForm from './SMSForm';
 import { GROUPME_ACCESS_TOKEN } from './env.js';
-import { Button, Checkbox, Tooltip, TextField } from '@material-ui/core';
+import { Button, Tooltip, TextField } from '@material-ui/core';
 
 import styles from "./style.js";
 import classNames from "classnames";
@@ -16,6 +16,9 @@ class App extends Component {
     selectedGroupName: null,
     keywords: null,
     messages: [],
+    submitting: null,
+    error: null,
+    lastAlertedText: null,
   }
 
   //ComponentDidMount runs each time the page is reloaded
@@ -83,14 +86,44 @@ class App extends Component {
   
   //This checks if any keyword is in the lastText, if so, it prints to console log
   notifyIfFlagRaised = () => {
-    if(this.state.messages.length != 0){
+    if(this.state.messages.length !== 0){
       let lastText = this.state.messages[this.state.messages.length -1].text;
-      let flagRaised = false;
       let wordIndex;
       for(wordIndex in this.state.keywords){
         console.log("lastText", lastText)
         if (lastText.includes(this.state.keywords[wordIndex])){
-          console.log("lastText flag raised! ", this.state.keywords[wordIndex])
+          if (this.state.lastAlertedText !== lastText){
+            console.log("lastText flag raised! ", this.state.keywords[wordIndex])
+            this.setState({ submitting: true, lastAlertedText: lastText });
+            fetch('/api/messages', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                to: '+15178993829',
+                body: 'alert: ' + lastText,
+              })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  this.setState({
+                    error: false,
+                    submitting: false,
+                    message: {
+                      to: '+15178993829',
+                      body: 'alert: ' + lastText,
+                    }
+                  });
+                } else {
+                  this.setState({
+                    error: true,
+                    submitting: false
+                  });
+                }
+              });
+          }
         }
       }
     }
