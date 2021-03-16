@@ -18,9 +18,11 @@ class App extends Component {
     keywords: null,
     messages: [],
   }
-  componentDidMount(){
-    let baseUrl = "https://api.groupme.com/v3";
 
+  //ComponentDidMount runs each time the page is reloaded
+  componentDidMount(){
+    //This fetches all the group chats the user is in
+    let baseUrl = "https://api.groupme.com/v3";
     let getGroupsOptions = {
       method: "GET",
       headers: {
@@ -41,12 +43,14 @@ class App extends Component {
     .catch((error) => console.log(error));
   }
         
+  //This handles updating the keywords value in state when editing the "Flagged Keywords" textfield
   handleKeywordChange = (event) => {
     this.setState({
         keywords: event.target.value,
     });
   };
 
+  //This retrieves the selected group chat's groupme messages
   checkGroupMeMessages = () => {
     let baseUrl = "https://api.groupme.com/v3";
     let getGroupsOptions = {
