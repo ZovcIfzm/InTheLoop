@@ -151,6 +151,7 @@ class App extends Component {
               >
               Selected group: {this.state.selectedGroupName}
             </Button>
+            { this.state.selectedGroupId ?
             <div className={classes.column}>
               <Tooltip title="Enter the keywords you want to be notified for (separate by comma)" placement="top-start">
               <TextField
@@ -163,7 +164,7 @@ class App extends Component {
                   }}
               />
               </Tooltip>
-            </div>
+            </div> : null}
             <div style={{height: 10}}/>
             <Button
                 variant="contained"
@@ -195,6 +196,7 @@ class App extends Component {
               ))}
             </div>
             <div style={{height: 10}}/>
+            { this.state.selectedGroupId ?
             <div style={{textAlign: "left"}}>
               <Button
                 variant="contained"
@@ -208,7 +210,7 @@ class App extends Component {
               {this.state.messages.map((msg, i)=>(
                 <div style={{color: "white"}} key={i}>{msg.name}: {msg.text}</div>
               ))}
-            </div>
+            </div> : null}
           </div>
         </div>
       </div>
