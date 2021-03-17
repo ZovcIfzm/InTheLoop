@@ -13,7 +13,7 @@ class App extends Component {
   state = {
     data: [],
     selectedGroupId: null,
-    selectedGroupName: null,
+    selectedGroupName: "None",
     keywords: null,
     messages: [],
     submitting: null,
@@ -70,12 +70,10 @@ class App extends Component {
       },
     }
     let fetchUrl = baseUrl + "/groups/" + this.state.selectedGroupId + "/messages?token=" + GROUPME_ACCESS_TOKEN
-    console.log("fetchUrl:", fetchUrl) 
     fetch(fetchUrl, getGroupsOptions)
     .then((response) => {
         if (!response.ok) throw Error(response.statusText);
             response.json().then(data => {
-              console.log(data.response)
               this.setState({
                 messages: data.response.messages
               })
@@ -86,45 +84,49 @@ class App extends Component {
   
   //This checks if any keyword is in the lastText, if so, it prints to console log
   notifyIfFlagRaised = () => {
+    if(this.state.selectedGroupId){
+      this.checkGroupMeMessages()
+    }
     if(this.state.messages.length !== 0){
       let lastText = this.state.messages[this.state.messages.length -1].text;
       let wordIndex;
-      for(wordIndex in this.state.keywords){
-        console.log("lastText", lastText)
-        if (lastText.includes(this.state.keywords[wordIndex])){
+      if (lastText){
+        for(wordIndex in this.state.keywords){
+          if (lastText.includes(this.state.keywords[wordIndex])){
 
-          //If the flag was raised for the lastText, it'll send you a text message- then say that no more messages can be sent for this particular lastText
-          if (this.state.lastAlertedText !== lastText){
-            console.log("lastText flag raised! ", this.state.keywords[wordIndex])
-            this.setState({ submitting: true, lastAlertedText: lastText });
-            fetch('/api/messages', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                to: '+15178993829',
-                body: 'alert: ' + lastText,
+            //If the flag was raised for the lastText, it'll send you a text message- then say that no more messages can be sent for this particular lastText
+            if (this.state.lastAlertedText !== lastText){
+              console.log("lastText flag raised! ", this.state.keywords[wordIndex])
+              this.setState({ submitting: true, lastAlertedText: lastText });
+              fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  to: '+15178993829',
+                  body: 'alert: ' + lastText,
+                })
               })
-            })
-              .then(res => res.json())
-              .then(data => {
-                if (data.success) {
-                  this.setState({
-                    error: false,
-                    submitting: false,
-                    message: {
-                      to: '+15178993829',
-                      body: 'alert: ' + lastText,
-                    }
-                  });
-                } else {
-                  this.setState({
-                    error: true,
-                    submitting: false
-                  });
-                }
-              });
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    this.setState({
+                      error: false,
+                      submitting: false,
+                      message: {
+                        to: '+15178993829',
+                        body: 'alert: ' + lastText,
+                      }
+                    });
+                  } else {
+                    this.setState({
+                      error: true,
+                      submitting: false
+                    });
+                  }
+                });
+            }
           }
         }
       }
@@ -139,11 +141,16 @@ class App extends Component {
       <div className={classNames(classes.main, classes.mainRaised)}>
         <div className={classes.container}>
           <div className={classes.column}>
-            <img src={logo} className="App-logo" alt="logo" />
-            <SMSForm />
-            <div>
+            <img src={logo} className={classes.logo} />
+            <div style={{height: 10}}/>
+            <Button
+                variant="contained"
+                component="label"
+                color="green"
+                className={classes.analyzeButton}
+              >
               Selected group: {this.state.selectedGroupName}
-            </div>
+            </Button>
             <div className={classes.column}>
               <Tooltip title="Enter the keywords you want to be notified for (separate by comma)" placement="top-start">
               <TextField
@@ -157,8 +164,18 @@ class App extends Component {
               />
               </Tooltip>
             </div>
-            <div className={classes.column}>
-              Current Group Chats
+            <div style={{height: 10}}/>
+            <Button
+                variant="contained"
+                component="label"
+                color="green"
+                className={classes.analyzeButton}
+              >
+                  
+              Select a Group Chat
+            </Button>
+            <div style={{height: 10}}/>
+            <div className={classes.row}>
               {this.state.data.map((group, i)=>(
                 <Button
                   key={i}
@@ -177,19 +194,19 @@ class App extends Component {
                 </Button>
               ))}
             </div>
-            <Button
-              variant="contained"
-              component="label"
-              color="primary"
-              className={classes.analyzeButton}
-              onClick={()=>this.checkGroupMeMessages()}
+            <div style={{height: 10}}/>
+            <div style={{textAlign: "left"}}>
+              <Button
+                variant="contained"
+                component="label"
+                color="green"
+                className={classes.analyzeButton}
               >
-                Manually check group message
-            </Button>
-            <div>
-              Group chat messages:
+                Group chat messages:
+              </Button>
+              <div style={{height: 10}}/>
               {this.state.messages.map((msg, i)=>(
-                <div key={i}>{msg.text}</div>
+                <div style={{color: "white"}} key={i}>{msg.name}: {msg.text}</div>
               ))}
             </div>
           </div>

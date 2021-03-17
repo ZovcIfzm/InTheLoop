@@ -92,13 +92,16 @@ const styles = {
     analyzeButton: {
       display: "flex",
       flex: 1,
-      width: "75%",
+      height: 80,
       alignSelf: "center",
     },
     hsvButton: {
       display: "flex",
       flex: 1,
       alignSelf: "center",
+    },
+    logo: {
+      width: "50%"
     }
   };
   
