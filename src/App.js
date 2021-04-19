@@ -24,6 +24,7 @@ class App extends Component {
     error: null,
     lastAlertedText: null,
     boxes: [[[false, "test"], [false, "hw"], [false, "exam"], [false, "ia"], [false, "study"], [false, "grades"]]],
+    phoneNumber: null,
   }
 
   //ComponentDidMount runs each time the page is reloaded
@@ -33,7 +34,7 @@ class App extends Component {
     //Causes the notifyIfFlagRaised function to run every second
     this.interval = setInterval(() => this.notifyIfFlagRaised(), 1000);
 
-    //This fetches all the group chats the user is in
+    //fetch and update phone number
     let baseUrl = "https://api.groupme.com/v3";
     let getGroupsOptions = {
       method: "GET",
@@ -42,6 +43,22 @@ class App extends Component {
                 'Content-Type': 'application/json',
       },
     }
+    fetch(baseUrl + "/users/me?token=" + GROUPME_ACCESS_TOKEN, getGroupsOptions)
+    .then((response) => {
+        if (!response.ok) throw Error(response.statusText);
+            response.json().then(data => {
+              let response = data.response
+              let phoneNumber = response.phone_number
+              
+              this.setState({
+                phoneNumber: phoneNumber
+              })
+            })
+        })
+    .catch((error) => console.log(error));
+  
+
+    //This fetches all the group chats the user is in
     fetch(baseUrl + "/groups?token=" + GROUPME_ACCESS_TOKEN, getGroupsOptions)
     .then((response) => {
         if (!response.ok) throw Error(response.statusText);
@@ -144,7 +161,7 @@ class App extends Component {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  to: '+15178993829',
+                  to: this.state.phoneNumber,
                   body: 'alert: ' + lastText,
                 })
               })
@@ -155,7 +172,7 @@ class App extends Component {
                       error: false,
                       submitting: false,
                       message: {
-                        to: '+15178993829',
+                        to: this.state.phoneNumber,
                         body: 'alert: ' + lastText,
                       }
                     });
