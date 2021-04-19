@@ -12,6 +12,23 @@ const styles = {
       justifyContent: "center",
       alignItems: "center"
     },
+    leftColumn: {
+      display: "flex",
+      flex: 1,
+      flexDirection: "column",
+      textAlign: "left",
+      justifyContent: "left",
+      alignItems: "left"
+    },
+    textBox: {
+      textAlign: "center",
+      justifyContent: "center",
+      alignItems: "center",
+      alignSelf: "center",
+      fontFamily: `"Roboto Slab", "Times New Roman", serif`,
+      fontWeight: "700",
+      color: "white",
+    },
     cropperContainer: {
       width: 50,
       height: 50,
@@ -93,7 +110,18 @@ const styles = {
       display: "flex",
       flex: 1,
       height: 80,
+      width: 250,
       alignSelf: "center",
+    },
+    deleteButton: {
+      display: "flex",
+      flex: 1,
+      height: 30,
+      width: 20,
+      alignSelf: "center",
+      padding: 2,
+      margin: 10,
+      marginLeft: 30,
     },
     hsvButton: {
       display: "flex",

@@ -3,7 +3,7 @@ import logo from './logo.gif';
 import './App.css';
 import SMSForm from './SMSForm';
 import { GROUPME_ACCESS_TOKEN } from './env.js';
-import { Button, Tooltip, TextField } from '@material-ui/core';
+import { Button, Tooltip, TextField, Checkbox } from '@material-ui/core';
 
 import styles from "./style.js";
 import classNames from "classnames";
@@ -13,12 +13,15 @@ class App extends Component {
   state = {
     data: [],
     selectedGroupId: null,
+    groupToIndexMap: {},
     selectedGroupName: "None",
-    keywords: null,
+    keywords: [],
+    potentialKeyword: null,
     messages: [],
     submitting: null,
     error: null,
     lastAlertedText: null,
+    boxes: [[[false, "test"], [false, "hw"], [false, "exam"], [false, "ia"], [false, "study"], [false, "grades"]]]
   }
 
   //ComponentDidMount runs each time the page is reloaded
@@ -39,9 +42,23 @@ class App extends Component {
     .then((response) => {
         if (!response.ok) throw Error(response.statusText);
             response.json().then(data => {
-              console.log(data.response)
+              let response = data.response
+              let curBoxes = this.state.boxes
+              let curGroupIdToIndexMap = this.state.groupToIndexMap
+              for (var i = 0; i < response.length; i++){
+                if (i != 0){
+                  let newBoxes = []
+                  for (var j = 0; j < curBoxes[0].length; j++){
+                    newBoxes.push([...curBoxes[0][j]])
+                  }
+                  curBoxes.push(newBoxes)
+                }
+                curGroupIdToIndexMap[response[i].id] = i
+              }
               this.setState({
-                data: data.response
+                data: response,
+                boxes: curBoxes,
+                groupToIndexMap: curGroupIdToIndexMap
               })
             })
         })
@@ -55,9 +72,21 @@ class App extends Component {
   //This handles updating the keywords value in state when editing the "Flagged Keywords" textfield
   handleKeywordChange = (event) => {
     this.setState({
-        keywords: event.target.value.toLowerCase().replace(/\s/g, '').split(','),
+      potentialKeyword: event.target.value.toLowerCase()
     });
   };
+
+  handleNewFlag = () => {
+    if (this.state.potentialKeyword != null){
+      let curBoxes = this.state.boxes
+      let groupIndex = this.state.groupToIndexMap[this.state.selectedGroupId]
+      curBoxes[groupIndex].push([false, this.state.potentialKeyword])
+      this.setState({
+        boxes: curBoxes,
+        potentialKeyword: null
+      })
+    }
+  }
 
   //This retrieves the selected group chat's groupme messages
   checkGroupMeMessages = () => {
@@ -74,8 +103,14 @@ class App extends Component {
     .then((response) => {
         if (!response.ok) throw Error(response.statusText);
             response.json().then(data => {
+              let curMessages = data.response.messages
+              for (var i = 0; i < curMessages.length; i++){
+                if (curMessages[i].text != null){
+                  curMessages[i].text = curMessages[i].text.toLowerCase()
+                }
+              }
               this.setState({
-                messages: data.response.messages
+                messages: curMessages
               })
             })
         })
@@ -84,6 +119,7 @@ class App extends Component {
   
   //This checks if any keyword is in the lastText, if so, it prints to console log
   notifyIfFlagRaised = () => {
+    console.log("keywords", this.state.keywords)
     if(this.state.selectedGroupId){
       this.checkGroupMeMessages()
     }
@@ -131,7 +167,29 @@ class App extends Component {
         }
       }
     }
+  }
+
+  handleCheck = (id) => {
     
+    let groupIndex = this.state.groupToIndexMap[this.state.selectedGroupId]
+
+    let curState = this.state.boxes
+    curState[groupIndex][id][0] = !curState[groupIndex][id][0]
+    
+    let curWords = this.state.keywords
+    let word = this.state.boxes[groupIndex][id][1].toLowerCase()
+    let wordIndex = curWords.indexOf(word)
+    if (wordIndex == -1){
+      curWords.push(word)
+    }
+    else{
+      curWords.splice(wordIndex, 1)
+    }
+
+    this.setState({
+      boxes: curState,
+      keywords: curWords
+    })
   }
 
   render() {
@@ -140,62 +198,113 @@ class App extends Component {
     return (
       <div className={classNames(classes.main, classes.mainRaised)}>
         <div className={classes.container}>
-          <div className={classes.column}>
+          <div className={classes.row}>
             <img src={logo} className={classes.logo} />
-            <div style={{height: 10}}/>
-            <Button
-                variant="contained"
-                component="label"
-                color="green"
-                className={classes.analyzeButton}
-              >
-              Selected group: {this.state.selectedGroupName}
-            </Button>
-            { this.state.selectedGroupId ?
             <div className={classes.column}>
-              <Tooltip title="Enter the keywords you want to be notified for (separate by comma)" placement="top-start">
-              <TextField
-                  id="standard-number"
-                  label="Flagged keywords"
-                  color="secondary"
-                  defaultValue={this.state.keywords}
-                  InputProps={{
-                    onChange: this.handleKeywordChange,
-                  }}
-              />
-              </Tooltip>
-            </div> : null}
-            <div style={{height: 10}}/>
-            <Button
-                variant="contained"
-                component="label"
-                color="green"
-                className={classes.analyzeButton}
-              >
-                  
-              Select a Group Chat
-            </Button>
-            <div style={{height: 10}}/>
-            <div className={classes.row}>
-              {this.state.data.map((group, i)=>(
-                <Button
-                  key={i}
+              <Button
                   variant="contained"
                   component="label"
-                  color="primary"
+                  color="green"
                   className={classes.analyzeButton}
-                  onClick={()=>{
-                    this.setState({
-                      selectedGroupId: group.id,
-                      selectedGroupName: group.name
-                    })
-                  }}
                 >
-                  {group.name}
-                </Button>
-              ))}
+                Select a Group Chat
+              </Button>
+              <div style={{height: 10}}/>
+              <div className={classes.column}>
+                {this.state.data.map((group, i)=>(
+                  <Button
+                    key={i}
+                    variant="contained"
+                    component="label"
+                    color="primary"
+                    className={classes.analyzeButton}
+                    onClick={()=>{
+                      this.setState({
+                        selectedGroupId: group.id,
+                        selectedGroupName: group.name
+                      })
+                    }}
+                  >
+                    {group.name}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div style={{height: 10}}/>
+            <div className={classes.column}>
+              { this.state.selectedGroupId ?
+              <div className={classes.column}>
+                <div className={classes.row}>
+                  <Tooltip title="Enter a single word representing the new flag you want, it will not be case-sensitive" placement="top-start">
+                  <TextField
+                      id="standard-number"
+                      label="Add new flag"
+                      color="secondary"
+                      defaultValue={this.state.keywords}
+                      InputProps={{
+                        onChange: this.handleKeywordChange,
+                      }}
+                  />
+                  </Tooltip>
+                  <Button
+                      variant="contained"
+                      component="label"
+                      color="primary"
+                      className={classes.deleteButton}
+                      onClick={this.handleNewFlag}
+                    >
+                      Add
+                  </Button>
+                </div>
+                {this.state.boxes[this.state.groupToIndexMap[this.state.selectedGroupId]].map((group, i) => (
+                  <div className={classes.row}>
+                    <Checkbox
+                      color="white"
+                      inputProps={{ 'aria-label': 'secondary checkbox' }}
+                      checked={group[0]}
+                      onChange={() => this.handleCheck(i)}
+                    />
+                    <div className={classes.textBox}>
+                      {group[1]}
+                    </div>
+                    <Button
+                      key={i}
+                      variant="contained"
+                      component="label"
+                      color="primary"
+                      className={classes.deleteButton}
+                      onClick={()=>{
+                        
+                        
+                        //handle keyword removal
+                        let curWords = this.state.keywords
+                        let groupIndex = this.state.groupToIndexMap[this.state.selectedGroupId]
+                        let word = this.state.boxes[groupIndex][i][1].toLowerCase()
+                        let wordIndex = curWords.indexOf(word)
+                        if (wordIndex != -1){
+                          curWords.splice(wordIndex, 1)
+                        }
+
+                        // handle box removal
+                        let curBoxes = this.state.boxes
+                        curBoxes[groupIndex].splice(i,1)
+                        
+                        this.setState({
+                          boxes: curBoxes,
+                          keywords: curWords
+                        })
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                ))
+                }
+
+              </div> : null}
+            </div>
+          </div>
+          <div style={{height: 10}}/>
+          <div className={classes.leftColumn}>
             { this.state.selectedGroupId ?
             <div style={{textAlign: "left"}}>
               <Button
