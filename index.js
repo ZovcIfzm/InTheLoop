@@ -1,7 +1,9 @@
+
+const path = require('path');
 const express = require('express');
+
 const bodyParser = require('body-parser');
 const pino = require('express-pino-logger')();
-
 require('dotenv').config()
 
 const client = require('twilio')(
@@ -13,6 +15,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(pino);
+app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('/api/greeting', (req, res) => {
   const name = req.query.name || 'World';
@@ -37,5 +40,5 @@ app.post('/api/messages', (req, res) => {
     });
 });
 
-app.set('port', (process.env.PORT || 3001));
-app.listen(app.get('port'), () => console.log('Listening on localhost:3001'));
+app.set('port', (process.env.PORT || 3000));
+app.listen(app.get('port'), () => console.log('Listening on localhost:3000'));
