@@ -2,12 +2,14 @@ import React, { Component } from 'react';
 import logo from './logo.gif';
 import './App.css';
 import SMSForm from './SMSForm';
-import { GROUPME_ACCESS_TOKEN } from './env.js';
 import { Button, Tooltip, TextField, Checkbox } from '@material-ui/core';
-
+import * as qs from 'qs'
 import styles from "./style.js";
 import classNames from "classnames";
 import { withStyles } from "@material-ui/core/styles";
+import { withRouter } from "react-router-dom";
+
+let GROUPME_ACCESS_TOKEN = null
 
 class App extends Component {
   state = {
@@ -21,11 +23,13 @@ class App extends Component {
     submitting: null,
     error: null,
     lastAlertedText: null,
-    boxes: [[[false, "test"], [false, "hw"], [false, "exam"], [false, "ia"], [false, "study"], [false, "grades"]]]
+    boxes: [[[false, "test"], [false, "hw"], [false, "exam"], [false, "ia"], [false, "study"], [false, "grades"]]],
   }
 
   //ComponentDidMount runs each time the page is reloaded
   componentDidMount(){
+    GROUPME_ACCESS_TOKEN = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).access_token
+    console.log("token:", GROUPME_ACCESS_TOKEN)
     //Causes the notifyIfFlagRaised function to run every second
     this.interval = setInterval(() => this.notifyIfFlagRaised(), 1000);
 
@@ -196,136 +200,162 @@ class App extends Component {
     
     const { classes } = this.props;
     return (
-      <div className={classNames(classes.main, classes.mainRaised)}>
-        <div className={classes.container}>
-          <div className={classes.row}>
-            <img src={logo} className={classes.logo} />
-            <div className={classes.column}>
-              <Button
-                  variant="contained"
-                  component="label"
-                  color="green"
-                  className={classes.analyzeButton}
-                >
-                Select a Group Chat
-              </Button>
-              <div style={{height: 10}}/>
-              <div className={classes.column}>
-                {this.state.data.map((group, i)=>(
+      <div>
+        {GROUPME_ACCESS_TOKEN ? 
+          <div className={classNames(classes.main, classes.mainRaised)}>
+            <div className={classes.container}>
+              <div className={classes.row}>
+                <img src={logo} className={classes.logo} />
+                <div className={classes.column}>
                   <Button
-                    key={i}
+                      variant="contained"
+                      component="label"
+                      color="green"
+                      className={classes.analyzeButton}
+                    >
+                    Select a Group Chat
+                  </Button>
+                  <div style={{height: 10}}/>
+                  <div className={classes.column}>
+                    {this.state.data.map((group, i)=>(
+                      <Button
+                        key={i}
+                        variant="contained"
+                        component="label"
+                        color="primary"
+                        className={classes.analyzeButton}
+                        onClick={()=>{
+                          this.setState({
+                            selectedGroupId: group.id,
+                            selectedGroupName: group.name
+                          })
+                        }}
+                      >
+                        {group.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className={classes.column}>
+                  { this.state.selectedGroupId ?
+                  <div className={classes.column}>
+                    <div className={classes.row}>
+                      <Tooltip title="Enter a single word representing the new flag you want, it will not be case-sensitive" placement="top-start">
+                      <TextField
+                          id="standard-number"
+                          label="Add new flag"
+                          color="secondary"
+                          defaultValue={this.state.keywords}
+                          InputProps={{
+                            onChange: this.handleKeywordChange,
+                          }}
+                      />
+                      </Tooltip>
+                      <Button
+                          variant="contained"
+                          component="label"
+                          color="primary"
+                          className={classes.deleteButton}
+                          onClick={this.handleNewFlag}
+                        >
+                          Add
+                      </Button>
+                    </div>
+                    {this.state.boxes[this.state.groupToIndexMap[this.state.selectedGroupId]].map((group, i) => (
+                      <div className={classes.row}>
+                        <Checkbox
+                          color="white"
+                          inputProps={{ 'aria-label': 'secondary checkbox' }}
+                          checked={group[0]}
+                          onChange={() => this.handleCheck(i)}
+                        />
+                        <div className={classes.textBox}>
+                          {group[1]}
+                        </div>
+                        <Button
+                          key={i}
+                          variant="contained"
+                          component="label"
+                          color="primary"
+                          className={classes.deleteButton}
+                          onClick={()=>{
+                            
+                            
+                            //handle keyword removal
+                            let curWords = this.state.keywords
+                            let groupIndex = this.state.groupToIndexMap[this.state.selectedGroupId]
+                            let word = this.state.boxes[groupIndex][i][1].toLowerCase()
+                            let wordIndex = curWords.indexOf(word)
+                            if (wordIndex != -1){
+                              curWords.splice(wordIndex, 1)
+                            }
+
+                            // handle box removal
+                            let curBoxes = this.state.boxes
+                            curBoxes[groupIndex].splice(i,1)
+                            
+                            this.setState({
+                              boxes: curBoxes,
+                              keywords: curWords
+                            })
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))
+                    }
+
+                  </div> : null}
+                </div>
+              </div>
+              <div style={{height: 10}}/>
+              <div className={classes.leftColumn}>
+                { this.state.selectedGroupId ?
+                <div style={{textAlign: "left"}}>
+                  <Button
                     variant="contained"
                     component="label"
-                    color="primary"
+                    color="green"
                     className={classes.analyzeButton}
-                    onClick={()=>{
-                      this.setState({
-                        selectedGroupId: group.id,
-                        selectedGroupName: group.name
-                      })
-                    }}
                   >
-                    {group.name}
+                    Group chat messages:
                   </Button>
-                ))}
+                  <div style={{height: 10}}/>
+                  {this.state.messages.map((msg, i)=>(
+                    <div style={{color: "white"}} key={i}>{msg.name}: {msg.text}</div>
+                  ))}
+                </div> : null}
               </div>
             </div>
-            <div className={classes.column}>
-              { this.state.selectedGroupId ?
-              <div className={classes.column}>
-                <div className={classes.row}>
-                  <Tooltip title="Enter a single word representing the new flag you want, it will not be case-sensitive" placement="top-start">
-                  <TextField
-                      id="standard-number"
-                      label="Add new flag"
-                      color="secondary"
-                      defaultValue={this.state.keywords}
-                      InputProps={{
-                        onChange: this.handleKeywordChange,
-                      }}
-                  />
-                  </Tooltip>
+          </div>
+          :
+          <div>
+            <div className={classNames(classes.main, classes.mainRaised)}>
+              <div className={classes.container}>
+                <div className={classes.column}>
+                  <img src={logo} className={classes.logo} />
                   <Button
-                      variant="contained"
-                      component="label"
-                      color="primary"
-                      className={classes.deleteButton}
-                      onClick={this.handleNewFlag}
-                    >
-                      Add
-                  </Button>
-                </div>
-                {this.state.boxes[this.state.groupToIndexMap[this.state.selectedGroupId]].map((group, i) => (
-                  <div className={classes.row}>
-                    <Checkbox
-                      color="white"
-                      inputProps={{ 'aria-label': 'secondary checkbox' }}
-                      checked={group[0]}
-                      onChange={() => this.handleCheck(i)}
-                    />
-                    <div className={classes.textBox}>
-                      {group[1]}
-                    </div>
-                    <Button
-                      key={i}
-                      variant="contained"
-                      component="label"
-                      color="primary"
-                      className={classes.deleteButton}
-                      onClick={()=>{
-                        
-                        
-                        //handle keyword removal
-                        let curWords = this.state.keywords
-                        let groupIndex = this.state.groupToIndexMap[this.state.selectedGroupId]
-                        let word = this.state.boxes[groupIndex][i][1].toLowerCase()
-                        let wordIndex = curWords.indexOf(word)
-                        if (wordIndex != -1){
-                          curWords.splice(wordIndex, 1)
-                        }
-
-                        // handle box removal
-                        let curBoxes = this.state.boxes
-                        curBoxes[groupIndex].splice(i,1)
-                        
-                        this.setState({
-                          boxes: curBoxes,
-                          keywords: curWords
-                        })
+                    variant="contained"
+                    component="label"
+                    color="green"
+                    className={classes.loginButton}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href='https://oauth.groupme.com/oauth/authorize?client_id=TVKKkI1pOw2vyhtoXYGpkQ8GNGodU8mxNXxfS2juUt2vOVFg';
                       }}
-                    >
-                      Delete
-                    </Button>
+                  >
+                    Login to GroupMe
+                  </Button>
                   </div>
-                ))
-                }
-
-              </div> : null}
+              </div>
             </div>
           </div>
-          <div style={{height: 10}}/>
-          <div className={classes.leftColumn}>
-            { this.state.selectedGroupId ?
-            <div style={{textAlign: "left"}}>
-              <Button
-                variant="contained"
-                component="label"
-                color="green"
-                className={classes.analyzeButton}
-              >
-                Group chat messages:
-              </Button>
-              <div style={{height: 10}}/>
-              {this.state.messages.map((msg, i)=>(
-                <div style={{color: "white"}} key={i}>{msg.name}: {msg.text}</div>
-              ))}
-            </div> : null}
-          </div>
+          }
         </div>
-      </div>
     );
   }
 }
 
 
-export default withStyles(styles)(App);
+export default withStyles(styles)(withRouter(App));

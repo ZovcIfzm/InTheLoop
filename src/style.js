@@ -113,6 +113,13 @@ const styles = {
       width: 250,
       alignSelf: "center",
     },
+    loginButton: {
+      display: "flex",
+      flex: 1,
+      height: 80,
+      width: 250,
+      alignSelf: "center",
+    },
     deleteButton: {
       display: "flex",
       flex: 1,
